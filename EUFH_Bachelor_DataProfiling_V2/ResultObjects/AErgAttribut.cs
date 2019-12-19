@@ -55,8 +55,8 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 		public string Text_Last { get; set; } = null;
 
 		public Dictionary<string, long> Histogramm { get; set; } = null;
-
-		public string Median { get; set; } = null;
+		
+		public Dictionary<string, string> Quartile {get;set;} = null;
 
 		public Dictionary<string, long> Benford { get; set; } = null;
 

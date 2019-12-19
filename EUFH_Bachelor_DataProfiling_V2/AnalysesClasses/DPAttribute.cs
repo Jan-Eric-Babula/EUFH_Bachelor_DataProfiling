@@ -12,6 +12,8 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 {
 	class DPAttribut
 	{
+		public static readonly int DOMAIN_SIMPLE_BORDER = 25;
+
 		public static AErgAttribut Analysis(string Database, string Relation, string Attribute, AttributeBaseData _ABD)
 		{
 			AErgAttribut _Ret = new AErgAttribut(Database, Relation, Attribute, _ABD.OrdinalPosition)
@@ -46,7 +48,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 						DPAttribut_Helper.Get_Histogramm(_Ret);
 
-						DPAttribut_Helper.Get_Median(_Ret);
+						DPAttribut_Helper.Get_Quartile(_Ret);
 
 						DPAttribut_Helper.Get_Benford(_Ret);
 					}
@@ -344,31 +346,45 @@ ELSE SELECT NULL;
 				_Ret.Histogramm = hg;
 			}
 
-			public static void Get_Median(AErgAttribut _Ret)
+			public static void Get_Quartile(AErgAttribut _Ret)
 			{
 
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 				string sql_cmd_str = $@"
-DECLARE @c BIGINT = {_Ret.Count_Attribute};
-SELECT AVG(1.0 * val) AS [MEDIAN]
-FROM (
-    SELECT CAST(T.[{_Ret.AttributeName}] AS FLOAT) val FROM {_Ret.Relation} T
-     ORDER BY val
-     OFFSET (@c - 1) / 2 ROWS
-     FETCH NEXT 1 + (1 - @c % 2) ROWS ONLY
-) AS x;
+SELECT  TOP 1
+	CAST(PERCENTILE_CONT(0.00) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
+,	CAST(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
+,	CAST(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
+,	CAST(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
+,	CAST(PERCENTILE_CONT(1.00) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
+FROM {_Ret.Relation} T;
 ";
 
 				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
 
 				_DR.Read();
 
-				string md = _DR.IsDBNull(0) ? "NULL" : $"{_DR.GetDouble(0)}";
+				string q_00 = _DR.IsDBNull(0) ? null : _DR.GetString(0);
+				string q_25 = _DR.IsDBNull(1) ? null : _DR.GetString(1);
+				string q_50 = _DR.IsDBNull(2) ? null : _DR.GetString(2);
+				string q_75 = _DR.IsDBNull(3) ? null : _DR.GetString(3);
+				string q_XX = _DR.IsDBNull(4) ? null : _DR.GetString(4);
 
 				_DR.Close();
 
-				_Ret.Median = md;
+				if (string.IsNullOrWhiteSpace(q_00) || string.IsNullOrWhiteSpace(q_25) || string.IsNullOrWhiteSpace(q_50) || string.IsNullOrWhiteSpace(q_75) || string.IsNullOrWhiteSpace(q_XX) )
+				{
+					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
+				}
+
+				_Ret.Quartile = new Dictionary<string, string>() {
+					{ "Quartil 0%", q_00},
+					{ "Quartil 25%", q_25},
+					{ "Quartil 50%", q_50},
+					{ "Quartil 75%", q_75},
+					{ "Quartil 100%", q_XX}
+				};
 			}
 
 			public static void Get_Benford(AErgAttribut _Ret)
@@ -714,7 +730,7 @@ FROM (
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-				if (_Ret.Count_Distinct <= 25)
+				if (_Ret.Count_Distinct <= DPAttribut.DOMAIN_SIMPLE_BORDER)
 				{
 
 					string sql_cmd_str = $@"
