@@ -49,10 +49,12 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 					{
 						if (PotKeyComb.Contains(LocDep))
 						{
-							continue;
+							_Ret[PotKeyComb].Add(LocDep,false);
 						}
-
-						_Ret[PotKeyComb].Add(LocDep, CheckDependency(Relation, PotKeyComb, LocDep));
+						else
+						{
+							_Ret[PotKeyComb].Add(LocDep, CheckDependency(Relation, PotKeyComb, LocDep));
+						}
 					}
 				}
 
