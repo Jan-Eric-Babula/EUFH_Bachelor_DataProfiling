@@ -457,9 +457,13 @@ GROUP BY V.LEADCHAR ORDER BY V.LEADCHAR ASC;
 
 				string sql_cmd_str = $@"
 SELECT TOP 1
-	CAST(FIRST_VALUE(T.[{_Ret.AttributeName}]) OVER (ORDER BY T.[{_Ret.AttributeName}] ASC) AS NVARCHAR)
-,	CAST(FIRST_VALUE(T.[{_Ret.AttributeName}]) OVER (ORDER BY T.[{_Ret.AttributeName}] DESC)AS NVARCHAR)
-FROM {_Ret.Relation} T;
+	CAST(FIRST_VALUE(K.C) OVER (ORDER BY K.C ASC) AS NVARCHAR) 
+,	CAST(FIRST_VALUE(K.C) OVER (ORDER BY K.C DESC)AS NVARCHAR) 
+FROM (
+	SELECT 
+		CAST(T.[{_Ret.AttributeName}] AS {_Ret.Datatype_Documented}) [C]
+	FROM {_Ret.Relation} T
+) K;
 ";
 
 				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);

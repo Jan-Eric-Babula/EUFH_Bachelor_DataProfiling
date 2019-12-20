@@ -47,7 +47,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 		}
 
-		public static List<AErgAttribut> AttributAnalyse_Results = new List<AErgAttribut>();
+		public static Dictionary<string, List<AErgAttribut>> AttributAnalyse_Results = new Dictionary<string, List<AErgAttribut>>();
 
 		private static void AttributAnalyse()
 		{
@@ -65,23 +65,29 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 					List<AttributeBaseData> L_ABD = DPAnalysis_Helper.GetAttributesBaseData(Relation, RowCount);
 
+					List<AErgAttribut> _tmp = new List<AErgAttribut>();
+
 					j = 0;
 
 					foreach (AttributeBaseData ABD in L_ABD)
 					{
-						//DUMP RESULTS
-						string json = JsonConvert.SerializeObject(AttributAnalyse_Results, Formatting.Indented);
-						if (File.Exists("dump.json"))
-						{
-							File.Delete("dump.json");
-						}
-						File.WriteAllText("dump.json", json);
+						
 
 						LogHelper.LogApp($"{i+1}.{j+1}) {Relation}.[{ABD.AttributeName}]");
 
 						try
 						{
-							AttributAnalyse_Results.Add(DPAttribut.Analysis(Database, Relation, ABD.AttributeName, ABD));
+							AErgAttribut _loc = DPAttribut.Analysis(Database, Relation, ABD.AttributeName, ABD);
+
+							_tmp.Add(_loc);
+
+							//DUMP LOCAL RESULTS
+							string json_l = JsonConvert.SerializeObject(_loc, Formatting.Indented);
+							if (File.Exists("dump_last.json"))
+							{
+								File.Delete("dump_last.json");
+							}
+							File.WriteAllText("dump_last.json", json_l);
 						}
 						catch(Exception e)
 						{
@@ -90,6 +96,16 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 						j++;
 					}
+
+					AttributAnalyse_Results.Add(Relation, _tmp);
+
+					//DUMP FULL RESULTS
+					string json = JsonConvert.SerializeObject(AttributAnalyse_Results, Formatting.Indented);
+					if (File.Exists("dump_complete.json"))
+					{
+						File.Delete("dump_complete.json");
+					}
+					File.WriteAllText("dump_complete.json", json);
 				}
 
 				if (i+1 == limit)
