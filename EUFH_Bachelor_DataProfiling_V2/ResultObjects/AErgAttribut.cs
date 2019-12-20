@@ -45,11 +45,11 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 		public long? StringLength_Max { get; set; } = null;
 
 		/* # Werteverteilung # */
-		public decimal? Statistics_Min { get; set; } = null;
-		public decimal? Statistics_Avg { get; set; } = null;
-		public decimal? Statistics_Max { get; set; } = null;
-		public decimal? Statistics_Stv { get; set; } = null;
-		public decimal? Statistics_Sum { get; set; } = null;
+		public string Statistics_Min { get; set; } = null;
+		public string Statistics_Avg { get; set; } = null;
+		public string Statistics_Max { get; set; } = null;
+		public string Statistics_Stv { get; set; } = null;
+		public string Statistics_Sum { get; set; } = null;
 
 		public string Text_First { get; set; } = null;
 		public string Text_Last { get; set; } = null;

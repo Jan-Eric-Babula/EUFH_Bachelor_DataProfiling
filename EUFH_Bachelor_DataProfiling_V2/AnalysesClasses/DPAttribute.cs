@@ -77,7 +77,21 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 					}
 
-					DPAttribut_Helper.Get_SimpleDomain(_Ret);
+					if (_Ret.Count_Distinct <= DPAttribut.DOMAIN_SIMPLE_BORDER)
+					{
+
+						DPAttribut_Helper.Get_SimpleDomain(_Ret);
+
+						if (_Ret.Histogramm == null)
+						{
+
+							DPAttribut_Helper.Get_Histogramm(_Ret);
+
+						}
+
+					}
+
+						
 				}
 
 			}
@@ -160,7 +174,7 @@ SELECT
 ,	CAST(AVG(K.[LEN]) AS DECIMAL)
 ,	CAST(MAX(K.[LEN]) AS BIGINT) FROM (
 SELECT LEN(V.A_T) [LEN] FROM (
-SELECT CAST(T.[{_Ret.AttributeName}] AS NVARCHAR) [A_T] FROM {_Ret.Relation} T) V) K;
+SELECT CONVERT(NVARCHAR,T.[{_Ret.AttributeName}]) [A_T] FROM {_Ret.Relation} T) V) K;
 ";
 
 				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
@@ -207,11 +221,11 @@ SELECT CAST(T.[{_Ret.AttributeName}] AS NVARCHAR) [A_T] FROM {_Ret.Relation} T) 
 
 				string sql_cmd_str = $@"
 SELECT 
-	CAST(MIN(V.U) AS FLOAT)
-,	CAST(AVG(V.U) AS FLOAT)
-,	CAST(MAX(V.U) AS FLOAT)
-,	CAST(STDEV(V.U) AS FLOAT) 
-,	CAST(SUM(V.U) AS FLOAT)
+	CONVERT(NVARCHAR,MIN(V.U))
+,	CONVERT(NVARCHAR,AVG(V.U))
+,	CONVERT(NVARCHAR,MAX(V.U))
+,	CONVERT(NVARCHAR,STDEV(V.U))
+,	CONVERT(NVARCHAR,SUM(V.U))
 FROM (
 SELECT CAST(T.[{_Ret.AttributeName}] AS {_Upscale}) AS [U] FROM {_Ret.Relation} T) V;
 ";
@@ -220,15 +234,15 @@ SELECT CAST(T.[{_Ret.AttributeName}] AS {_Upscale}) AS [U] FROM {_Ret.Relation} 
 
 				_DR.Read();
 
-				decimal? st_min = _DR.IsDBNull(0) ? (decimal?)null : (decimal)_DR.GetDouble(0);
-				decimal? st_avg = _DR.IsDBNull(1) ? (decimal?)null : (decimal)_DR.GetDouble(1);
-				decimal? st_max = _DR.IsDBNull(2) ? (decimal?)null : (decimal)_DR.GetDouble(2);
-				decimal? st_stv = _DR.IsDBNull(3) ? (decimal?)null : (decimal)_DR.GetDouble(3);
-				decimal? st_sum = _DR.IsDBNull(4) ? (decimal?)null : (decimal)_DR.GetDouble(4);
+				string st_min = _DR.IsDBNull(0) ? null : _DR.GetString(0);
+				string st_avg = _DR.IsDBNull(1) ? null : _DR.GetString(1);
+				string st_max = _DR.IsDBNull(2) ? null : _DR.GetString(2);
+				string st_stv = _DR.IsDBNull(3) ? null : _DR.GetString(3);
+				string st_sum = _DR.IsDBNull(4) ? null : _DR.GetString(4);
 
 				_DR.Close();
 
-				if (!st_min.HasValue || !st_avg.HasValue || !st_max.HasValue || !st_stv.HasValue || !st_sum.HasValue)
+				if (string.IsNullOrWhiteSpace(st_min) || string.IsNullOrWhiteSpace(st_avg) || string.IsNullOrWhiteSpace(st_max) || string.IsNullOrWhiteSpace(st_stv) || string.IsNullOrWhiteSpace(st_sum))
 				{
 					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
 				}
@@ -242,13 +256,13 @@ SELECT CAST(T.[{_Ret.AttributeName}] AS {_Upscale}) AS [U] FROM {_Ret.Relation} 
 
 			public static void Get_Histogramm(AErgAttribut _Ret)
 			{
-				if (_Ret.Count_Distinct > DPAttribut.DOMAIN_SIMPLE_BORDER)
+				if (_Ret.Count_Distinct <= DPAttribut.DOMAIN_SIMPLE_BORDER)
 				{
-					Get_Histogramm_Calculated(_Ret);
+					Get_Histogramm_Select(_Ret);
 				}
 				else
 				{
-					Get_Histogramm_Select(_Ret);
+					Get_Histogramm_Calculated(_Ret);
 				}
 			}
 
@@ -256,8 +270,12 @@ SELECT CAST(T.[{_Ret.AttributeName}] AS {_Upscale}) AS [U] FROM {_Ret.Relation} 
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
+				string conv = _Ret.Datatype_Documented == "float" || _Ret.Datatype_Documented == "real" ?
+					$"FORMAT(T.[{_Ret.AttributeName}], '0.0####################')" : 
+					$"CONVERT(NVARCHAR,T.[{_Ret.AttributeName}])";
+
 				string sql_cmd_str = $@"
-SELECT CAST(T.[{_Ret.AttributeName}] AS NVARCHAR), COUNT_BIG(*) FROM {_Ret.Relation} T 
+SELECT { conv }, COUNT_BIG(*) FROM {_Ret.Relation} T 
 GROUP BY T.[{_Ret.AttributeName}] ORDER BY T.[{_Ret.AttributeName}];
 ";
 
@@ -279,8 +297,8 @@ GROUP BY T.[{_Ret.AttributeName}] ORDER BY T.[{_Ret.AttributeName}];
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-				string min = $"{_Ret.Statistics_Min.Value}".Replace(',', '.');
-				string max = $"{_Ret.Statistics_Max.Value}".Replace(',', '.');
+				string min = $"{_Ret.Statistics_Min}";
+				string max = $"{_Ret.Statistics_Max}";
 
 				string sql_cmd_str = $@"
 DECLARE @b FLOAT = CAST({min} AS FLOAT); 
@@ -388,11 +406,11 @@ ELSE SELECT NULL;
 
 				string sql_cmd_str = $@"
 SELECT  TOP 1
-	CAST(PERCENTILE_CONT(0.00) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
-,	CAST(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
-,	CAST(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
-,	CAST(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
-,	CAST(PERCENTILE_CONT(1.00) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER () AS NVARCHAR)
+	CONVERT(NVARCHAR,PERCENTILE_CONT(0.00) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER ())
+,	CONVERT(NVARCHAR,PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER ())
+,	CONVERT(NVARCHAR,PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER ())
+,	CONVERT(NVARCHAR,PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER ())
+,	CONVERT(NVARCHAR,PERCENTILE_CONT(1.00) WITHIN GROUP (ORDER BY T.[{_Ret.AttributeName}]) OVER ())
 FROM {_Ret.Relation} T;
 ";
 
@@ -430,7 +448,7 @@ FROM {_Ret.Relation} T;
 
 				string sql_cmd_str = $@"
 SELECT V.LEADCHAR, COUNT_BIG(*) FROM
-(SELECT LEFT(CAST(T.[{_Ret.AttributeName}] AS VARCHAR), 1) AS [LEADCHAR] FROM {_Ret.Relation} T) V
+(SELECT LEFT(CONVERT(NVARCHAR,T.[{_Ret.AttributeName}]), 1) AS [LEADCHAR] FROM {_Ret.Relation} T) V
 GROUP BY V.LEADCHAR ORDER BY V.LEADCHAR ASC;
 ";
 
@@ -457,8 +475,8 @@ GROUP BY V.LEADCHAR ORDER BY V.LEADCHAR ASC;
 
 				string sql_cmd_str = $@"
 SELECT TOP 1
-	CAST(FIRST_VALUE(K.C) OVER (ORDER BY K.C ASC) AS NVARCHAR) 
-,	CAST(FIRST_VALUE(K.C) OVER (ORDER BY K.C DESC)AS NVARCHAR) 
+	CONVERT(NVARCHAR,FIRST_VALUE(K.C) OVER (ORDER BY K.C ASC) )
+,	CONVERT(NVARCHAR,FIRST_VALUE(K.C) OVER (ORDER BY K.C DESC))
 FROM (
 	SELECT 
 		CAST(T.[{_Ret.AttributeName}] AS {_Ret.Datatype_Documented}) [C]
@@ -495,7 +513,7 @@ FROM (
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 				string sql_cmd_str = $@"
-SELECT TOP 1 CAST(T.[{_Ret.AttributeName}] AS NVARCHAR), COUNT_BIG(*) FROM {_Ret.Relation} T GROUP BY T.[{_Ret.AttributeName}];
+SELECT TOP 1 CONVERT(NVARCHAR, T.[{_Ret.AttributeName}]), COUNT_BIG(*) FROM {_Ret.Relation} T GROUP BY T.[{_Ret.AttributeName}];
 ";
 
 				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
@@ -769,32 +787,29 @@ FROM (
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-				if (_Ret.Count_Distinct <= DPAttribut.DOMAIN_SIMPLE_BORDER)
-				{
-
-					string sql_cmd_str = $@"
-SELECT CAST(K.A AS NVARCHAR) FROM ( SELECT DISTINCT T.[{_Ret.AttributeName}] AS [A] FROM {_Ret.Relation} T ) K ORDER BY K.A;
+				string sql_cmd_str = $@"
+SELECT CONVERT(NVARCHAR,K.A) FROM ( SELECT DISTINCT T.[{_Ret.AttributeName}] AS [A] FROM {_Ret.Relation} T ) K ORDER BY K.A;
 ";
 
-					List<string> sd = new List<string>();
+				List<string> sd = new List<string>();
 
-					SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
+				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
 
-					while (_DR.Read())
-					{
-						sd.Add( _DR.IsDBNull(0) ? "NULL" : _DR.GetString(0) );
-					}
-
-					_DR.Close();
-
-					if (sd.Count == 0)
-					{
-						throw new ArgumentNullException("SQL Query returned invalid NULL value!");
-					}
-
-					_Ret.SimpleDomain = sd;
-
+				while (_DR.Read())
+				{
+					sd.Add( _DR.IsDBNull(0) ? "NULL" : _DR.GetString(0) );
 				}
+
+				_DR.Close();
+
+				if (sd.Count == 0)
+				{
+					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
+				}
+
+				_Ret.SimpleDomain = sd;
+
+				
 
 
 			}

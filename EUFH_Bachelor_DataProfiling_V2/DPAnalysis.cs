@@ -24,7 +24,11 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 			InitAnalyse();
 
-			AttributAnalyse();
+			//AttributAnalyse();
+
+			/*Import dump instead of running AttributAnalyse()*/
+			string import_json = File.ReadAllText("dump_complete_20191220.json");
+			AttributAnalyse_Results = JsonConvert.DeserializeObject<Dictionary<string, List<AErgAttribut>>>(import_json);
 
 			//TupelAnalyse();
 
@@ -58,9 +62,9 @@ namespace EUFH_Bachelor_DataProfiling_V2
 			foreach (string Relation in Relations)
 			{
 				LogHelper.LogApp($"{i+1}) {Relation}");
-				if (i+1 >= offset)
+				if (i + 1 >= offset)
 				{
-				
+
 					long RowCount = DPAnalysis_Helper.GetRelationRowCount(Relation);
 
 					List<AttributeBaseData> L_ABD = DPAnalysis_Helper.GetAttributesBaseData(Relation, RowCount);
@@ -71,9 +75,9 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 					foreach (AttributeBaseData ABD in L_ABD)
 					{
-						
 
-						LogHelper.LogApp($"{i+1}.{j+1}) {Relation}.[{ABD.AttributeName}]");
+
+						LogHelper.LogApp($"{i + 1}.{j + 1}) {Relation}.[{ABD.AttributeName}]");
 
 						try
 						{
@@ -89,7 +93,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 							}
 							File.WriteAllText("dump_last.json", json_l);
 						}
-						catch(Exception e)
+						catch (Exception e)
 						{
 							LogHelper.LogAppError(e);
 						}
@@ -106,6 +110,10 @@ namespace EUFH_Bachelor_DataProfiling_V2
 						File.Delete("dump_complete.json");
 					}
 					File.WriteAllText("dump_complete.json", json);
+				}
+				else
+				{
+					AttributAnalyse_Results.Add(Relation, null);
 				}
 
 				if (i+1 == limit)
