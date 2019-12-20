@@ -242,6 +242,41 @@ SELECT CAST(T.[{_Ret.AttributeName}] AS {_Upscale}) AS [U] FROM {_Ret.Relation} 
 
 			public static void Get_Histogramm(AErgAttribut _Ret)
 			{
+				if (_Ret.Count_Distinct > DPAttribut.DOMAIN_SIMPLE_BORDER)
+				{
+					Get_Histogramm_Calculated(_Ret);
+				}
+				else
+				{
+					Get_Histogramm_Select(_Ret);
+				}
+			}
+
+			private static void Get_Histogramm_Select(AErgAttribut _Ret)
+			{
+				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+
+				string sql_cmd_str = $@"
+SELECT CAST(T.[{_Ret.AttributeName}] AS NVARCHAR), COUNT_BIG(*) FROM {_Ret.Relation} T 
+GROUP BY T.[{_Ret.AttributeName}] ORDER BY T.[{_Ret.AttributeName}];
+";
+
+				Dictionary<string, long> hg = new Dictionary<string, long>();
+
+				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
+
+				while (_DR.Read())
+				{
+					hg.Add( _DR.IsDBNull(0) ? "NULL" : _DR.GetString(0), _DR.GetInt64(1) );
+				}
+
+				_DR.Close();
+
+				_Ret.Histogramm = hg;
+			}
+
+			private static void Get_Histogramm_Calculated(AErgAttribut _Ret)
+			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 				string min = $"{_Ret.Statistics_Min.Value}".Replace(',', '.');
@@ -421,9 +456,10 @@ GROUP BY V.LEADCHAR ORDER BY V.LEADCHAR ASC;
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 				string sql_cmd_str = $@"
-SELECT 
-	CAST((SELECT TOP 1 T.[{_Ret.AttributeName}] FROM {_Ret.Relation} T WHERE T.[{_Ret.AttributeName}] IS NOT NULL ORDER BY T.[{_Ret.AttributeName}] ASC) AS NVARCHAR)
-,	CAST((SELECT TOP 1 T.[{_Ret.AttributeName}] FROM {_Ret.Relation} T WHERE T.[{_Ret.AttributeName}] IS NOT NULL ORDER BY T.[{_Ret.AttributeName}] DESC) AS NVARCHAR);
+SELECT TOP 1
+	CAST(FIRST_VALUE(T.[{_Ret.AttributeName}]) OVER (ORDER BY T.[{_Ret.AttributeName}] ASC) AS NVARCHAR)
+,	CAST(FIRST_VALUE(T.[{_Ret.AttributeName}]) OVER (ORDER BY T.[{_Ret.AttributeName}] DESC)AS NVARCHAR)
+FROM {_Ret.Relation} T;
 ";
 
 				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
@@ -452,7 +488,6 @@ SELECT
 
 			public static void Get_ModeValue(AErgAttribut _Ret)
 			{
-
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 				string sql_cmd_str = $@"
