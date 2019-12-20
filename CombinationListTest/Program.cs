@@ -10,9 +10,10 @@ namespace CombinationListTest
 	{
 		static void Main(string[] args)
 		{
+			int maxlen = 3;
 			List<object> _input = new List<object>(new object[] { "a", "b", "c", "d", "e" });
 
-			List<List<object>> _output = RootCombine(new List<object>(_input));
+			List<List<object>> _output = RootCombine(_input, null, maxlen);
 
 			_output.Sort((a, b) => a.Count.CompareTo(b.Count));
 
@@ -93,7 +94,7 @@ namespace CombinationListTest
 		}
 
 
-		static List<List<object>> RootCombine(List<object> _inp, List<object> _pre = null)
+		static List<List<object>> RootCombine(List<object> _inp, List<object> _pre = null, int maxlen = -1)
 		{
 			_inp = new List<object>(_inp);
 			_pre = _pre == null ? null : new List<object>(_pre);
@@ -129,20 +130,23 @@ namespace CombinationListTest
 				//Add self to Output
 				_out.Add(_pre);
 
-				//Grow Vertical | Grow Deeper
-				_out.AddRange(GrowDeeper(_inp, _pre));
-
-				//Grow Horizontal
-				if (_pre.Count - 1 == 0)
+				if (maxlen == -1 || _pre.Count < maxlen)
 				{
-					_out.AddRange(RootCombine(_inp));
+					//Grow Vertical | Grow Deeper
+					_out.AddRange(GrowDeeper(_inp, _pre, maxlen));
+
+					//Grow Horizontal
+					if (_pre.Count - 1 == 0)
+					{
+						_out.AddRange(RootCombine(_inp, null, maxlen));
+					}
 				}
 			}
 
 			return _out;
 		}
 
-		static List<List<object>> GrowDeeper(List<object> _inp, List<object> _pre)
+		static List<List<object>> GrowDeeper(List<object> _inp, List<object> _pre, int maxlen = -1)
 		{
 			_inp = new List<object>(_inp);
 			_pre = new List<object>(_pre);
@@ -152,7 +156,7 @@ namespace CombinationListTest
 			for (int i = 0; i < max; i++)
 			{
 
-				_out.AddRange(RootCombine(_inp, _pre));
+				_out.AddRange(RootCombine(_inp, _pre, maxlen));
 				_inp.Remove(_inp.First());
 
 			}
