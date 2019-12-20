@@ -18,12 +18,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 			get; set;
 		}
 
-		public string Attribute_Dependant
-		{
-			get;set;
-		}
-
-		public string Attribute_Determinant
+		public string Attributes
 		{
 			get;set;
 		}
@@ -37,8 +32,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 		{
 			Database = DB;
 			Relation = RL;
-			Attribute_Dependant = null;
-			Attribute_Determinant = null;
+			Attributes = null;
 			Note = null;
 		}
 	}

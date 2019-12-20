@@ -30,7 +30,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 			string import_json = File.ReadAllText("dump_complete_20191220.json");
 			AttributAnalyse_Results = JsonConvert.DeserializeObject<Dictionary<string, List<AErgAttribut>>>(import_json);
 
-			//TupelAnalyse();
+			TupelAnalyse();
 
 			RelationenAnalyse();
 
@@ -87,11 +87,11 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 							//DUMP LOCAL RESULTS
 							string json_l = JsonConvert.SerializeObject(_loc, Formatting.Indented);
-							if (File.Exists("dump_last.json"))
+							if (File.Exists("dump_attribut_last.json"))
 							{
-								File.Delete("dump_last.json");
+								File.Delete("dump_attribut_last.json");
 							}
-							File.WriteAllText("dump_last.json", json_l);
+							File.WriteAllText("dump_attribut_last.json", json_l);
 						}
 						catch (Exception e)
 						{
@@ -105,11 +105,11 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 					//DUMP FULL RESULTS
 					string json = JsonConvert.SerializeObject(AttributAnalyse_Results, Formatting.Indented);
-					if (File.Exists("dump_complete.json"))
+					if (File.Exists("dump_attribut_complete.json"))
 					{
-						File.Delete("dump_complete.json");
+						File.Delete("dump_attribut_complete.json");
 					}
-					File.WriteAllText("dump_complete.json", json);
+					File.WriteAllText("dump_attribut_complete.json", json);
 				}
 				else
 				{
@@ -133,11 +133,23 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
+			int i = 0;
 			foreach (string rel in Relations)
 			{
-
+				LogHelper.LogApp($"{i}) {rel}");
 				TupelAnalyse_Results.Add(DPTupel.Analysis(Database, rel));
+				string json = JsonConvert.SerializeObject(TupelAnalyse_Results, Formatting.Indented);
+				if (File.Exists("dump_tupel.json"))
+				{
+					File.Delete("dump_tupel.json");
+				}
+				File.WriteAllText("dump_tupel.json", json);
 
+				i++;
+				if (i > 10)
+				{
+					break;
+				}
 			}
 
 		}

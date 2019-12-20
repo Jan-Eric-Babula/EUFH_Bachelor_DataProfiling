@@ -32,6 +32,7 @@ namespace CombinationListTest
 			Console.ReadLine();
 		}
 
+
 		static void GetCombination(List<int> list)
 		{
 			double count = Math.Pow(2, list.Count);
