@@ -21,12 +21,9 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 		}
 
 		/* # Helper Values # */
-		public long Size
-		{
-			get; set;
-		} = 0;
+		public long Size {get; set;}
 
-		public Dictionary<string, Dictionary<string, bool>> FunctionalDependencyGrid
+		public Dictionary<List<string>, Dictionary<string, bool>> FunctionalDependencyGrid
 		{
 			get; set;
 		} = null;
@@ -53,12 +50,13 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 			get; set;
 		} = null;
 
-		public AErgTupel(string _Database, string _Relation)
+		public AErgTupel(string _Database, string _Relation, long size)
 		{
 			FilePath = $@"{_Database}\{_Relation}";
 			FileTitel = $"{_Relation}";
 			Database = _Database;
 			Relation = _Relation;
+			Size = size;
 		}
 	}
 }

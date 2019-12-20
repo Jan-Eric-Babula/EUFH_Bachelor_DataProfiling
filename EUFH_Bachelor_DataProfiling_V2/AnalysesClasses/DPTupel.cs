@@ -15,13 +15,13 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 		public static AErgTupel Analysis(string Database, string Relation)
 		{
-			AErgTupel _Ret = new AErgTupel(Database, Relation);
+			AErgTupel _Ret = new AErgTupel(Database, Relation, DPAnalysis.AttributAnalyse_Results[Relation].First().Count_Rows.Value);
 
-			_Ret.Size = DPTupel_Helper.Get_Size(_Ret.Relation);
+			_Ret.DocumentedKey = DPTupel_Helper.Get_DocumentedKey(Relation);
 
 			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrix(_Ret.Relation);
 
-			_Ret.DocumentedKey = DPTupel_Helper.Get_DocumentedKeys(Relation);
+			
 
 
 
@@ -31,81 +31,55 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 		private class DPTupel_Helper
 		{
 
-			public static long Get_Size(string Relation)
+			public static Dictionary<List<string>, Dictionary<string, bool>> CreateDependencyMatrix(string Relation)
 			{
-				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-				string sql_cmd_str = $@"
-SELECT COUNT_BIG(*) FROM {Relation};
-";
+				Dictionary<List<string>, Dictionary<string, bool>> _Ret = CheckSingleAttributeDependencies(Relation);
 
-				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
+				Dictionary<List<string>, Dictionary<string, bool>> _multi = CheckMutiAttributeDependencies(Relation);
 
-				_DR.Read();
-
-				long? size = _DR.IsDBNull(0) ? (long?)null : _DR.GetInt64(0);
-
-				_DR.Close();
-
-				if (!size.HasValue)
+				foreach (var kvp in _multi)
 				{
-					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
+					_Ret.Add(kvp.Key, kvp.Value);
 				}
 
-				return size.Value;
+				return _Ret;
+
 			}
 
-			public static Dictionary<string, Dictionary<string, bool>> CreateDependencyMatrix(string Relation)
+			private static Dictionary<List<string>, Dictionary<string, bool>> CheckSingleAttributeDependencies(string Relation)
 			{
+				Dictionary<List<string>, Dictionary<string, bool>> _Ret = new Dictionary<List<string>, Dictionary<string, bool>>();
 
-				Dictionary<string, Dictionary<string, bool>> _Ret = new Dictionary<string, Dictionary<string, bool>>();
-
-				List<string> Attributes = Get_Attributes(Relation);
-
-				foreach (string A1 in Attributes)
+				foreach (AErgAttribut A1 in DPAnalysis.AttributAnalyse_Results[Relation])
 				{
 					Dictionary<string, bool> _tmp = new Dictionary<string, bool>();
 
-					foreach (string A2 in Attributes)
+					foreach (AErgAttribut A2 in DPAnalysis.AttributAnalyse_Results[Relation])
 					{
-						_tmp.Add(A2, CheckDependency(Relation, A1, A2));
+						if (A1 != A2)
+						{
+							_tmp.Add(A2.AttributeName, CheckDependency(Relation, new List<string>(new string[] { A1.AttributeName }), A2.AttributeName));
+						}
 					}
 
-					_Ret.Add(A1, _tmp);
+					_Ret.Add(new List<string>(new string[] { A1.AttributeName }), _tmp);
 				}
 
 				return _Ret;
-
 			}
 
-			public static List<string> Get_Attributes(string Relation)
+			private static Dictionary<List<string>, Dictionary<string, bool>> CheckMutiAttributeDependencies(string Relation)
 			{
-				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+				Dictionary<List<string>, Dictionary<string, bool>> _Ret = new Dictionary<List<string>, Dictionary<string, bool>>();
 
-				List<string> _Ret = new List<string>();
-
-				string sql_cmd_str = $@"
-SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE '['+TABLE_SCHEMA+'].['+TABLE_NAME+']' = '{Relation}' ORDER BY ORDINAL_POSITION;
-";
-
-				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
-
-				while (_DR.Read())
-				{
-					_Ret.Add(_DR.GetString(0));
-				}
-
-				_DR.Close();
-
-				if (_Ret.Count == 0)
-				{
-					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
-				}
+				//TODO
 
 				return _Ret;
 			}
 
-			public static bool CheckDependency(string Relation, string Attribute1, string Attribute2)
+			//TODO Implement query builder
+			private static bool CheckDependency(string Relation, List<string> Attribute1, string Attribute2)
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
@@ -113,9 +87,9 @@ SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE '['+TABLE_SCHEMA+'].['+
 SELECT
 	CAST(CASE WHEN COUNT(K.A) > 0 THEN 0 ELSE 1 END AS BIT)
 FROM (
-SELECT TOP 1 [{Attribute1}] A
+SELECT TOP 1 [{Attribute1.First()}] A
 FROM {Relation}
-GROUP BY [{Attribute1}]
+GROUP BY [{Attribute1.First()}]
 HAVING COUNT (DISTINCT [{Attribute2}]) > 1) K;
 ";
 
@@ -135,7 +109,7 @@ HAVING COUNT (DISTINCT [{Attribute2}]) > 1) K;
 				return fd.Value;
 			}
 
-			public static PossibleKey Get_DocumentedKeys(string Relation)
+			public static PossibleKey Get_DocumentedKey(string Relation)
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
@@ -161,7 +135,7 @@ WHERE CONSTRAINT_TYPE = 'PRIMARY KEY' AND '['+TC.TABLE_SCHEMA+'].['+TC.TABLE_NAM
 				if (_cols.Count > 0)
 				{
 					_ret = new PossibleKey(Relation);
-					_ret.Attribute = _cols;
+					_ret.Attributes = _cols;
 				}
 
 				return _ret;

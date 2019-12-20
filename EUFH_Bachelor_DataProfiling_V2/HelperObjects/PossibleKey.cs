@@ -12,7 +12,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 		{
 			get;set;
 		}
-		public List<string> Attribute
+		public List<string> Attributes
 		{
 			get;set;
 		}
@@ -20,7 +20,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 		public PossibleKey(string RL)
 		{
 			Relation = RL;
-			Attribute = new List<string>();
+			Attributes = new List<string>();
 		}
 
 	}
