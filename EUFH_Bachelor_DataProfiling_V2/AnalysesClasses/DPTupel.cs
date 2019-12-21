@@ -28,7 +28,9 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 			if (_Ret.FunctionalDependencyGrid != null)
 			{
 
+				_Ret.PossibleKeys = DPTupel_Helper.Find_PossibleKeys(_Ret);
 
+				_Ret.PossibleDependencies = DPTupel_Helper.Find_PossibleDependency(_Ret);
 
 			}
 
@@ -84,9 +86,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 			public static Dictionary<string, Dictionary<string, bool?>> CreateDependencyMatrixA(string Relation)
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
-
 				
-
 				if (DPAnalysis.AttributAnalyse_Results_Sort[Relation].First().Value.Count_Rows > 0)
 				{
 					List<Task<DependencyResult>> _task_queue = new List<Task<DependencyResult>>();
@@ -342,6 +342,8 @@ HAVING COUNT (DISTINCT [{Dependant}]) > 1) K;
 					_ret += s == Attributes.Last() ? "" : ",";
 				}
 
+				
+
 				return _ret;
 			}
 
@@ -445,6 +447,61 @@ WHERE CCU.CONSTRAINT_SCHEMA+'.'+CCU.CONSTRAINT_NAME = '{DependencyName}';
 				_DR.Close();
 
 				return _Ret;
+			}
+
+			public static List<PossibleKey> Find_PossibleKeys(AErgTupel _Ret)
+			{
+				//Possible key list
+				List<PossibleKey> _pkl = new List<PossibleKey>();
+				//Functional dependency count
+				Dictionary<string, int> _fdc = new Dictionary<string, int>();
+
+				foreach (string _attr in _Ret.FunctionalDependencyGrid.Keys)
+				{
+					_fdc.Add( _attr, _Ret.FunctionalDependencyGrid[_attr].Count(e => e.Value.HasValue && e.Value.Value) );
+				}
+
+				//Turn dictionary to List for sorting
+				List<KeyValuePair<string, int>> _fdc_list = _fdc.ToList();
+				//Sort by Amount DESC
+				_fdc_list.Sort((a,b) => b.Value.CompareTo(a.Value));
+				//Find metric for best
+				int max_fd = _fdc.First().Value;
+				//Remove leser than best
+				_fdc_list.RemoveAll(a => a.Value != max_fd);
+				//Order by Amount of Attributes ASC
+				_fdc_list.Sort((a, b) => a.Key.Count(c => c == ',').CompareTo(b.Key.Count(d => d == ',')));
+				//Find metric for least Attributes
+				int least_attr = _fdc_list.First().Key.Count(a => a==',');
+				//Remove lesser that best
+				_fdc_list.RemoveAll(a => a.Key.Count(b => b == ',') != least_attr);
+				//Convert back to Dictionary
+				_fdc = _fdc_list.ToDictionary(a => a.Key, a => a.Value);
+
+				if (_fdc.Count > 0)
+				{
+					List<string> _loc_attrb = null;
+					foreach (string _str_attrb in _fdc.Keys)
+					{
+						string _str_clean = _str_attrb.Replace("[", "").Replace("]", "");
+						_loc_attrb = new List<string>(_str_clean.Split(','));
+
+						_pkl.Add(new PossibleKey(_Ret.Relation) { Attributes = _loc_attrb });
+					}
+
+				}
+
+				return _pkl;
+			}
+
+			public static List<PossibleDependency> Find_PossibleDependency(AErgTupel _Ret)
+			{
+				//Possible dependency list
+				List<PossibleDependency> _pdl = new List<PossibleDependency>();
+
+
+
+				return _pdl;
 			}
 		}
 
