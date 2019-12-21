@@ -127,11 +127,26 @@ namespace EUFH_Bachelor_DataProfiling_V2
 		}
 
 		public static List<AErgTupel> TupelAnalyse_Results = new List<AErgTupel>();
+		public static Dictionary<string, Dictionary<string, AErgAttribut>> AttributAnalyse_Results_Sort = new Dictionary<string, Dictionary<string, AErgAttribut>>();
 
 		private static void TupelAnalyse()
 		{
 
 			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+
+			//Reformat
+			foreach (var _a in AttributAnalyse_Results.Keys)
+			{
+				Dictionary<string, AErgAttribut> _tmp = new Dictionary<string, AErgAttribut>();
+
+				foreach (var _b in AttributAnalyse_Results[_a])
+				{
+					_tmp.Add(_b.AttributeName, _b);
+				}
+
+				AttributAnalyse_Results_Sort.Add(_a, _tmp);
+			}
+			//\\
 
 			int i = 0;
 			foreach (string rel in Relations)

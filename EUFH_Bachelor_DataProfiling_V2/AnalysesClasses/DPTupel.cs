@@ -24,7 +24,12 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrix(_Ret.Relation);
 
-			
+			if (_Ret.FunctionalDependencyGrid != null)
+			{
+
+
+
+			}
 
 			return _Ret;
 		}
@@ -32,33 +37,45 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 		private class DPTupel_Helper
 		{
 
-			public static Dictionary<List<string>, Dictionary<string, bool>> CreateDependencyMatrix(string Relation)
+			public static Dictionary<string, Dictionary<string, bool?>> CreateDependencyMatrix(string Relation)
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-				Dictionary<List<string>, Dictionary<string, bool>> _Ret = new Dictionary<List<string>, Dictionary<string, bool>>();
-				List<string> Attributes = DPAnalysis.AttributAnalyse_Results[Relation].Select(i => i.AttributeName).ToList();
-				List<List<string>> AttributesCombined = RootCombine(Attributes, null, 5);
-				AttributesCombined.Sort((a, b) => a.Count.CompareTo(b.Count));
-
-				foreach (List<string> PotKeyComb in AttributesCombined)
+				if (DPAnalysis.AttributAnalyse_Results_Sort[Relation].First().Value.Count_Rows > 0)
 				{
-					_Ret.Add(PotKeyComb, new Dictionary<string, bool>());
+					Dictionary<string, Dictionary<string, bool?>> _Ret = new Dictionary<string, Dictionary<string, bool?>>();
+					List<string> Attributes = DPAnalysis.AttributAnalyse_Results[Relation].Select(i => i.AttributeName).ToList();
+					List<List<string>> AttributesCombined = RootCombine(Attributes, null, 3);
+					AttributesCombined.Sort((a, b) => a.Count.CompareTo(b.Count));
 
-					foreach (string LocDep in Attributes)
+					foreach (List<string> PotKeyComb in AttributesCombined)
 					{
-						if (PotKeyComb.Contains(LocDep))
+						string PotKeyComb_str = Make_AttributeList(PotKeyComb);
+						_Ret.Add(PotKeyComb_str, new Dictionary<string, bool?>());
+
+						foreach (string LocDep in Attributes)
 						{
-							_Ret[PotKeyComb].Add(LocDep,false);
-						}
-						else
-						{
-							_Ret[PotKeyComb].Add(LocDep, CheckDependency(Relation, PotKeyComb, LocDep));
+							if (DPAnalysis.AttributAnalyse_Results_Sort[Relation][LocDep].Count_Attribute > 0)
+							{
+								if (PotKeyComb.Contains(LocDep))
+								{
+									_Ret[PotKeyComb_str].Add(LocDep, (bool?)null);
+								}
+								else
+								{
+									_Ret[PotKeyComb_str].Add(LocDep, CheckDependency(Relation, PotKeyComb, LocDep));
+								}
+							}
 						}
 					}
-				}
 
-				return _Ret;
+					return _Ret;
+				}
+				else
+				{
+					return null;
+				}
+				
 			}
 
 			private static List<List<string>> RootCombine(List<string> _inp, List<string> _pre = null, int maxlen = -1)

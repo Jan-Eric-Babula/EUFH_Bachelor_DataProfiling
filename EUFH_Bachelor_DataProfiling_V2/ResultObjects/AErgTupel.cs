@@ -23,7 +23,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 		/* # Helper Values # */
 		public long Size {get; set;}
 
-		public Dictionary<List<string>, Dictionary<string, bool>> FunctionalDependencyGrid
+		public Dictionary<string, Dictionary<string, bool?>> FunctionalDependencyGrid
 		{
 			get; set;
 		} = null;
