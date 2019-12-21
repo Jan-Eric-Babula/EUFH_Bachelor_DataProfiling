@@ -147,7 +147,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 				AttributAnalyse_Results_Sort.Add(_a, _tmp);
 			}
 			//\\
-
+			int limit = 5;
 			int i = 0;
 			foreach (string rel in Relations)
 			{
@@ -161,7 +161,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 				File.WriteAllText("dump_tupel.json", json);
 
 				i++;
-				if (i > 10)
+				if (i >= limit)
 				{
 					break;
 				}

@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 {
@@ -22,7 +23,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 			_Ret.DocumentedDpenedency = DPTupel_Helper.Get_DocumentedDependencies(Relation);
 
-			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrix(_Ret.Relation);
+			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrixA(_Ret.Relation);
 
 			if (_Ret.FunctionalDependencyGrid != null)
 			{
@@ -45,7 +46,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 				{
 					Dictionary<string, Dictionary<string, bool?>> _Ret = new Dictionary<string, Dictionary<string, bool?>>();
 					List<string> Attributes = DPAnalysis.AttributAnalyse_Results[Relation].Select(i => i.AttributeName).ToList();
-					List<List<string>> AttributesCombined = RootCombine(Attributes, null, 3);
+					List<List<string>> AttributesCombined = RootCombine(Attributes, null, 2);
 					AttributesCombined.Sort((a, b) => a.Count.CompareTo(b.Count));
 
 					foreach (List<string> PotKeyComb in AttributesCombined)
@@ -76,6 +77,108 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 					return null;
 				}
 				
+			}
+
+			private static readonly int parallelConnections = 50;
+
+			public static Dictionary<string, Dictionary<string, bool?>> CreateDependencyMatrixA(string Relation)
+			{
+				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+
+				
+
+				if (DPAnalysis.AttributAnalyse_Results_Sort[Relation].First().Value.Count_Rows > 0)
+				{
+					List<Task<DependencyResult>> _task_queue = new List<Task<DependencyResult>>();
+					
+
+					Dictionary<string, Dictionary<string, bool?>> _Ret = new Dictionary<string, Dictionary<string, bool?>>();
+					List<string> Attributes = DPAnalysis.AttributAnalyse_Results[Relation].Select(i => i.AttributeName).ToList();
+					List<List<string>> AttributesCombined = RootCombine(Attributes, null, 2);
+					AttributesCombined.Sort((a, b) => a.Count.CompareTo(b.Count));
+
+					long count = (long)Attributes.Count * (long)AttributesCombined.Count;
+					long j = 0;
+
+					DateTime _task_start = DateTime.Now;
+
+					foreach (List<string> PotKeyComb in AttributesCombined)
+					{
+						string PotKeyComb_str = Make_AttributeList(PotKeyComb);
+						_Ret.Add(PotKeyComb_str, new Dictionary<string, bool?>());
+
+						foreach (string LocDep in Attributes)
+						{
+							
+							if (DPAnalysis.AttributAnalyse_Results_Sort[Relation][LocDep].Count_Attribute > 0)
+							{
+								if (PotKeyComb.Contains(LocDep))
+								{
+									_Ret[PotKeyComb_str].Add(LocDep, (bool?)null);
+								}
+								else
+								{
+									var _loc_task = Task.Run(async () => await CheckDependencyA(Relation, PotKeyComb, LocDep));
+									_task_queue.Add(_loc_task);
+
+									if (_task_queue.Count >= parallelConnections)
+									{
+										LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: Awaiting last {_task_queue.Count} requests... ( {j} / {count} )");
+										Task.WhenAll(_task_queue).Wait();
+
+										foreach (var _t in _task_queue)
+										{
+											_Ret[_t.Result.Keys].Add(_t.Result.Dependant, _t.Result.Result );
+											LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: {Relation} - Checked [{_t.Result.Dependant}] for {_t.Result.Keys}");
+
+										}
+										LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: {_task_queue.Count} Tasks took {DateTime.Now - _task_start}");
+										_task_queue.Clear();
+										_task_start = DateTime.Now;
+									}
+								}
+							}
+							j++;
+						}
+					}
+
+					LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: Resolving last requests ({_task_queue.Count})... ( {j} / {count} )");
+					Task.WhenAll(_task_queue).Wait();
+					foreach (var _t in _task_queue)
+					{
+						_Ret[_t.Result.Keys].Add(_t.Result.Dependant, _t.Result.Result);
+						LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: {Relation} - Checked [{_t.Result.Dependant}] for {_t.Result.Keys}");
+
+					}
+					LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: {_task_queue.Count} Tasks took {DateTime.Now - _task_start}");
+					_task_queue.Clear();
+
+					return _Ret;
+				}
+				else
+				{
+					return null;
+				}
+
+			}
+
+			private class DependencyResult
+			{
+				public bool Result
+				{
+					get;
+					set;
+				}
+				public string Keys
+				{
+					get;
+					set;
+				}
+				public string Dependant
+				{
+					get;
+					set;
+				}
 			}
 
 			private static List<List<string>> RootCombine(List<string> _inp, List<string> _pre = null, int maxlen = -1)
@@ -183,6 +286,50 @@ HAVING COUNT (DISTINCT [{Dependant}]) > 1) K;
 				}
 
 				return fd.Value;
+			}
+
+			private static async Task<DependencyResult> CheckDependencyA(string Relation, List<string> Keys, string Dependant)
+			{
+				string str_keys = Make_AttributeList(Keys);
+				if (string.IsNullOrWhiteSpace(str_keys))
+				{
+					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
+				}
+
+				bool? fd = (bool?)null;
+
+				string sql_cmd_str = $@"
+SELECT
+	CAST(CASE WHEN COUNT(K.A) > 0 THEN 0 ELSE 1 END AS BIT)
+FROM (
+SELECT TOP 1 {str_keys} A
+FROM {Relation}
+GROUP BY {str_keys}
+HAVING COUNT (DISTINCT [{Dependant}]) > 1) K;
+";
+
+				using (SqlConnection _con = new SqlConnection(DBManager.ConnectionString))
+				{
+					_con.Open();
+					using (SqlCommand _cmd = new SqlCommand(sql_cmd_str, _con) { CommandTimeout = 150 })
+					{
+						using (SqlDataReader _dr = _cmd.ExecuteReader())
+						{
+							_dr.Read();
+
+							fd = _dr.IsDBNull(0) ? (bool?)null : _dr.GetBoolean(0);
+
+							
+						}
+					}
+				}
+
+				if (!fd.HasValue)
+				{
+					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
+				}
+
+				return new DependencyResult() { Result = fd.Value, Keys = str_keys, Dependant = Dependant } ;
 			}
 
 			private static string Make_AttributeList(List<string> Attributes)

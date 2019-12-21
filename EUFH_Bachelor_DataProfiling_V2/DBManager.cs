@@ -16,6 +16,14 @@ namespace EUFH_Bachelor_DataProfiling_V2
 		private static readonly string ConfigPath = $@"connection_cfg.json";
 		private static string _ConnectionString;
 		
+		public static string ConnectionString
+		{
+			get
+			{
+				return _ConnectionString;
+			}
+		}
+
 		private static bool _Init
 		{
 			get
