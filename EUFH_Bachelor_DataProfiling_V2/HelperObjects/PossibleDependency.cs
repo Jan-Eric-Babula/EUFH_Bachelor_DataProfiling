@@ -18,7 +18,12 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 			get; set;
 		}
 
-		public string Attributes
+		public List<string> Attributes
+		{
+			get;set;
+		}
+
+		public string Dependant
 		{
 			get;set;
 		}
@@ -33,6 +38,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 			Database = DB;
 			Relation = RL;
 			Attributes = null;
+			Dependant = null;
 			Note = null;
 		}
 	}

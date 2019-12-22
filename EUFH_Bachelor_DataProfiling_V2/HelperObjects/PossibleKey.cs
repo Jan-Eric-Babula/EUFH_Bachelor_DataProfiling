@@ -17,6 +17,11 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 			get;set;
 		}
 
+		public double Coverage
+		{
+			get;set;
+		}
+
 		public PossibleKey(string RL)
 		{
 			Relation = RL;

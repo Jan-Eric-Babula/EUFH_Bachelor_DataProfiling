@@ -22,7 +22,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 			_Ret.DocumentedKey = DPTupel_Helper.Get_DocumentedKey(Relation);
 
 			_Ret.DocumentedDpenedency = DPTupel_Helper.Get_DocumentedDependencies(Relation);
-
+			
 			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrixA(_Ret.Relation);
 
 			if (_Ret.FunctionalDependencyGrid != null)
@@ -30,10 +30,8 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 				_Ret.PossibleKeys = DPTupel_Helper.Find_PossibleKeys(_Ret);
 
-				_Ret.PossibleDependencies = DPTupel_Helper.Find_PossibleDependency(_Ret);
-
 			}
-
+			
 			return _Ret;
 		}
 
@@ -372,8 +370,10 @@ WHERE CONSTRAINT_TYPE = 'PRIMARY KEY' AND '['+TC.TABLE_SCHEMA+'].['+TC.TABLE_NAM
 
 				if (_cols.Count > 0)
 				{
-					_ret = new PossibleKey(Relation);
-					_ret.Attributes = _cols;
+					_ret = new PossibleKey(Relation) {
+						Attributes = _cols,
+						Coverage = 1.0
+					};
 				}
 
 				return _ret;
@@ -472,9 +472,9 @@ WHERE CCU.CONSTRAINT_SCHEMA+'.'+CCU.CONSTRAINT_NAME = '{DependencyName}';
 				//Order by Amount of Attributes ASC
 				_fdc_list.Sort((a, b) => a.Key.Count(c => c == ',').CompareTo(b.Key.Count(d => d == ',')));
 				//Find metric for least Attributes
-				int least_attr = _fdc_list.First().Key.Count(a => a==',');
+				int least_attr = _fdc_list.First().Key.Count(a => a==',')+1;
 				//Remove lesser that best
-				_fdc_list.RemoveAll(a => a.Key.Count(b => b == ',') != least_attr);
+				_fdc_list.RemoveAll(a => a.Key.Count(b => b == ',')+1 != least_attr);
 				//Convert back to Dictionary
 				_fdc = _fdc_list.ToDictionary(a => a.Key, a => a.Value);
 
@@ -486,24 +486,13 @@ WHERE CCU.CONSTRAINT_SCHEMA+'.'+CCU.CONSTRAINT_NAME = '{DependencyName}';
 						string _str_clean = _str_attrb.Replace("[", "").Replace("]", "");
 						_loc_attrb = new List<string>(_str_clean.Split(','));
 
-						_pkl.Add(new PossibleKey(_Ret.Relation) { Attributes = _loc_attrb });
+						_pkl.Add(new PossibleKey(_Ret.Relation) { Attributes = _loc_attrb, Coverage = (double)max_fd / (double) (_Ret.FunctionalDependencyGrid.First().Value.Count- least_attr) });
 					}
 
 				}
 
 				return _pkl;
 			}
-
-			public static List<PossibleDependency> Find_PossibleDependency(AErgTupel _Ret)
-			{
-				//Possible dependency list
-				List<PossibleDependency> _pdl = new List<PossibleDependency>();
-
-
-
-				return _pdl;
-			}
 		}
-
 	}
 }

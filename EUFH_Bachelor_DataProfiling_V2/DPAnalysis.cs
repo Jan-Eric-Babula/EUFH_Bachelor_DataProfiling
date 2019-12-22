@@ -147,7 +147,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 				AttributAnalyse_Results_Sort.Add(_a, _tmp);
 			}
 			//\\
-			int limit = 5;
+			int limit = 30;
 			int i = 0;
 			foreach (string rel in Relations)
 			{
