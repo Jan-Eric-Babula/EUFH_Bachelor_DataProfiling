@@ -22,8 +22,11 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 			_Ret.DocumentedKey = DPTupel_Helper.Get_DocumentedKey(Relation);
 
 			_Ret.DocumentedDpenedency = DPTupel_Helper.Get_DocumentedDependencies(Relation);
-			
-			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrixA(_Ret.Relation);
+
+			if (DPAnalysis.AttributAnalyse_Results_Sort[Relation].First().Value.Count_Rows > 0)
+			{
+				_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrixA(_Ret.Relation);
+			}
 
 			if (_Ret.FunctionalDependencyGrid != null && _Ret.DocumentedKey == null)
 			{
@@ -37,45 +40,38 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 		private class DPTupel_Helper
 		{
-
+			[Obsolete("Use Asynchronous function instead!", false)]
 			public static Dictionary<string, Dictionary<string, bool?>> CreateDependencyMatrix(string Relation)
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-				if (DPAnalysis.AttributAnalyse_Results_Sort[Relation].First().Value.Count_Rows > 0)
+				Dictionary<string, Dictionary<string, bool?>> _Ret = new Dictionary<string, Dictionary<string, bool?>>();
+				List<string> Attributes = DPAnalysis.AttributAnalyse_Results[Relation].Select(i => i.AttributeName).ToList();
+				List<List<string>> AttributesCombined = RootCombine(Attributes, null, 2);
+				AttributesCombined.Sort((a, b) => a.Count.CompareTo(b.Count));
+
+				foreach (List<string> PotKeyComb in AttributesCombined)
 				{
-					Dictionary<string, Dictionary<string, bool?>> _Ret = new Dictionary<string, Dictionary<string, bool?>>();
-					List<string> Attributes = DPAnalysis.AttributAnalyse_Results[Relation].Select(i => i.AttributeName).ToList();
-					List<List<string>> AttributesCombined = RootCombine(Attributes, null, 2);
-					AttributesCombined.Sort((a, b) => a.Count.CompareTo(b.Count));
+					string PotKeyComb_str = Make_AttributeList(PotKeyComb);
+					_Ret.Add(PotKeyComb_str, new Dictionary<string, bool?>());
 
-					foreach (List<string> PotKeyComb in AttributesCombined)
+					foreach (string LocDep in Attributes)
 					{
-						string PotKeyComb_str = Make_AttributeList(PotKeyComb);
-						_Ret.Add(PotKeyComb_str, new Dictionary<string, bool?>());
-
-						foreach (string LocDep in Attributes)
+						if (DPAnalysis.AttributAnalyse_Results_Sort[Relation][LocDep].Count_Attribute > 0)
 						{
-							if (DPAnalysis.AttributAnalyse_Results_Sort[Relation][LocDep].Count_Attribute > 0)
+							if (PotKeyComb.Contains(LocDep))
 							{
-								if (PotKeyComb.Contains(LocDep))
-								{
-									_Ret[PotKeyComb_str].Add(LocDep, (bool?)null);
-								}
-								else
-								{
-									_Ret[PotKeyComb_str].Add(LocDep, CheckDependency(Relation, PotKeyComb, LocDep));
-								}
+								_Ret[PotKeyComb_str].Add(LocDep, (bool?)null);
+							}
+							else
+							{
+								_Ret[PotKeyComb_str].Add(LocDep, CheckDependency(Relation, PotKeyComb, LocDep));
 							}
 						}
 					}
+				}
 
-					return _Ret;
-				}
-				else
-				{
-					return null;
-				}
+				return _Ret;
 				
 			}
 
@@ -248,8 +244,8 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 				return _out;
 			}
-
-			//TODO Implement query builder
+			
+			[Obsolete("Use Asynchronous function instead!", false)]
 			private static bool CheckDependency(string Relation, List<string> Keys, string Dependant)
 			{
 				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}: Checking [{Dependant}] for {Make_AttributeList(Keys)}");
@@ -381,6 +377,8 @@ WHERE CONSTRAINT_TYPE = 'PRIMARY KEY' AND '['+TC.TABLE_SCHEMA+'].['+TC.TABLE_NAM
 
 			public static List<PossibleDependency> Get_DocumentedDependencies(string Relation)
 			{
+				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+
 				List<string> _InternalNames = Get_DocumentedDependencies_Names(Relation);
 				List<PossibleDependency> _Ret = new List<PossibleDependency>();
 
@@ -394,7 +392,6 @@ WHERE CONSTRAINT_TYPE = 'PRIMARY KEY' AND '['+TC.TABLE_SCHEMA+'].['+TC.TABLE_NAM
 
 			private static List<string> Get_DocumentedDependencies_Names(string Relation)
 			{
-				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 				List<string> _Ret = new List<string>();
 
@@ -417,10 +414,9 @@ WHERE CONSTRAINT_TYPE = 'CHECK' AND '['+TABLE_SCHEMA+'].['+TABLE_NAME+']' = '{Re
 
 				return _Ret;
 			}
+
 			private static PossibleDependency Get_DocumentedDependencies_Details(string DependencyName, string Relation)
 			{
-				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
-
 				PossibleDependency _Ret = new PossibleDependency(DPAnalysis.Database, Relation);
 				List<string> _Tmp = new List<string>();
 
@@ -451,6 +447,8 @@ WHERE CCU.CONSTRAINT_SCHEMA+'.'+CCU.CONSTRAINT_NAME = '{DependencyName}';
 
 			public static List<PossibleKey> Find_PossibleKeys(AErgTupel _Ret)
 			{
+				LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+
 				//Possible key list
 				List<PossibleKey> _pkl = new List<PossibleKey>();
 				//Functional dependency count
