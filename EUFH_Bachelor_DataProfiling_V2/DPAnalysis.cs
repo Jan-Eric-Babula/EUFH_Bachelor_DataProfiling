@@ -174,11 +174,27 @@ namespace EUFH_Bachelor_DataProfiling_V2
 #endif
 		}
 
+		public static AErgRelationen RelationenAnalysis_Result = null;
+		public static Dictionary<string, AErgTupel> TupelAnalyse_Result_Sort = new Dictionary<string, AErgTupel>();
+
 		private static void RelationenAnalyse()
 		{
 			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-			//
+			//Reformat
+			foreach (var _a in TupelAnalyse_Results)
+			{
+				TupelAnalyse_Result_Sort.Add(_a.Relation, _a);
+			}
+
+			RelationenAnalysis_Result = DPRelationen.Analysis(Database);
+
+			string json = JsonConvert.SerializeObject(RelationenAnalysis_Result, Formatting.Indented);
+			if (File.Exists("dump_relation.json"))
+			{
+				File.Delete("dump_relation.json");
+			}
+			File.WriteAllText("dump_relation.json", json);
 
 		}
 

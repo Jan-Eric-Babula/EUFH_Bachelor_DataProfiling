@@ -9,14 +9,9 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 	class PossibleReference
 	{
 
-		public string PK_Relation
+		public PossibleKey PK_Relation
 		{
 			get; set;
-		} = null;
-
-		public List<string> PK_Attributes
-		{
-			get;set;
 		} = null;
 
 		public string FK_Relation
@@ -29,16 +24,16 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 			get;set;
 		} = null;
 
-		public decimal Childless
+		public long Childless
 		{
 			get; set;
 		} = -1;
 
-		public decimal Parents
+		public long Parents
 		{
 			get;set;
 		} = -1;
-		public decimal Orphans
+		public long Orphans
 		{
 			get;set;
 		} = -1;
