@@ -26,10 +26,6 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 			//AttributAnalyse();
 
-			/*Import dump instead of running AttributAnalyse()*/
-			string import_json = File.ReadAllText("dump_complete_20191220.json");
-			AttributAnalyse_Results = JsonConvert.DeserializeObject<Dictionary<string, List<AErgAttribut>>>(import_json);
-
 			TupelAnalyse();
 
 			RelationenAnalyse();
@@ -55,9 +51,15 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 		private static void AttributAnalyse()
 		{
+			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+#if DEBUG
+			/*Import dump instead of running AttributAnalyse()*/
+			string import_json = File.ReadAllText("dump_complete_20191220.json");
+			AttributAnalyse_Results = JsonConvert.DeserializeObject<Dictionary<string, List<AErgAttribut>>>(import_json);
+#else
 			int i = 0, offset = 0, limit = 100, j = 0;
 
-			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
+			
 
 			foreach (string Relation in Relations)
 			{
@@ -123,7 +125,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 				i++;
 			}
-
+#endif
 		}
 
 		public static List<AErgTupel> TupelAnalyse_Results = new List<AErgTupel>();
@@ -131,9 +133,12 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 		private static void TupelAnalyse()
 		{
-
 			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
-
+#if DEBUG
+			/*Import dump instead of running TupelAnalyse()*/
+			string import_json = File.ReadAllText("dump_tupel_withoutDependency_20191221.json");
+			TupelAnalyse_Results = JsonConvert.DeserializeObject<List<AErgTupel>>(import_json);
+#else
 			//Reformat
 			foreach (var _a in AttributAnalyse_Results.Keys)
 			{
@@ -166,12 +171,11 @@ namespace EUFH_Bachelor_DataProfiling_V2
 					break;
 				}
 			}
-
+#endif
 		}
 
 		private static void RelationenAnalyse()
 		{
-
 			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
 			//

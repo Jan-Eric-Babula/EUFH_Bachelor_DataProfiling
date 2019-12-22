@@ -48,10 +48,12 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 		public AErgTupel(string _Database, string _Relation, long size)
 		{
 			FilePath = $@"{_Database}\{_Relation}";
-			FileTitel = $"{_Relation}";
+			FileTitel = $"{_Relation} ";
 			Database = _Database;
 			Relation = _Relation;
 			Size = size;
 		}
+
+		public AErgTupel() { }
 	}
 }

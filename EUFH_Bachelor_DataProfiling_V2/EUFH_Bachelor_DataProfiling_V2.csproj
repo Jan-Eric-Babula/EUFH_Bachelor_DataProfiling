@@ -55,6 +55,7 @@
     <Compile Include="HelperObjects\AttributeBaseData.cs" />
     <Compile Include="HelperObjects\PossibleDependency.cs" />
     <Compile Include="HelperObjects\PossibleKey.cs" />
+    <Compile Include="HelperObjects\PossibleReference.cs" />
     <Compile Include="ResultObjects\AErgAttribut.cs" />
     <Compile Include="ResultObjects\AErgRelationen.cs" />
     <Compile Include="ResultObjects\AErgTupel.cs" />

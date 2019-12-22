@@ -94,5 +94,9 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 			AttributeName = _AttributName;
 			OrdinalPosition = _OrdinalPosition;
 		}
+
+		public AErgAttribut()
+		{
+		}
 	}
 }

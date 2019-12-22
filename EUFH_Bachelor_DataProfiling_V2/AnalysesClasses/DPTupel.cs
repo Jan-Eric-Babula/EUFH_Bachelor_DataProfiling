@@ -336,8 +336,6 @@ HAVING COUNT (DISTINCT [{Dependant}]) > 1) K;
 					_ret += s == Attributes.Last() ? "" : ",";
 				}
 
-				
-
 				return _ret;
 			}
 
