@@ -40,11 +40,6 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 			get; set;
 		} = null;
 
-		public List<PossibleDependency> PossibleDependencies
-		{
-			get; set;
-		} = null;
-
 		public List<PossibleDependency> DocumentedDpenedency
 		{
 			get; set;
