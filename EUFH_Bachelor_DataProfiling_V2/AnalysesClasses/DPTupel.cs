@@ -25,7 +25,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 			
 			_Ret.FunctionalDependencyGrid = DPTupel_Helper.CreateDependencyMatrixA(_Ret.Relation);
 
-			if (_Ret.FunctionalDependencyGrid != null)
+			if (_Ret.FunctionalDependencyGrid != null && _Ret.DocumentedKey == null)
 			{
 
 				_Ret.PossibleKeys = DPTupel_Helper.Find_PossibleKeys(_Ret);
