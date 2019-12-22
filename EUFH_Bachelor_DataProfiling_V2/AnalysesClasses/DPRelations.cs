@@ -20,12 +20,39 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 			_Ret.DocumentedReferences = DPRelationen_Helper.Get_DocumentedReferences();
 
 			Dictionary<string, PossibleKey> RelationsWithKeys = DPRelationen_Helper.Find_RelationsWithKeys();
-
+			int _i = 0;
 			//Primary Key required for Foreign Key
 			if (RelationsWithKeys.Count > 0)
 			{
+				_Ret.FoundReferences = new List<PossibleReference>();
+				foreach (string _r in RelationsWithKeys.Keys)
+				{
+					LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name} - {_i}/{RelationsWithKeys.Count} - {_r}");
+					
+					//Only test keys with 1 Attribute - - Double cross to complex
+					if (RelationsWithKeys[_r].Attributes.Count == 1)
+					{
+						string _a = RelationsWithKeys[_r].Attributes.First();
+						ColumnBasicProperties _a_p = DPRelationen_Helper.Get_ColumnBasicProps(_r, _a);
+						int _j = 0, _v = 0;
+						Dictionary<string, List<string>> _a_similar = DPRelationen_Helper.Get_SimilarColumns(_a_p);
+						_a_similar.Remove(_r);
 
-
+						foreach (string __r in _a_similar.Keys)
+						{
+							_v = 0;
+							foreach (string __a in _a_similar[__r])
+							{
+								LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name} - {_i}/{RelationsWithKeys.Count} - {_r} - Checking {_j} ({__r}) on {_v}({__a})");
+								_Ret.FoundReferences.Add(DPRelationen_Helper.Test_Reference(RelationsWithKeys[_r], __r, __a));
+								_v++;
+								
+							}
+							_j++;
+						}
+					}
+					_i++;
+				}
 
 			}
 
@@ -315,7 +342,7 @@ FROM (
 		LEFT OUTER JOIN 
 		{_PR.PK_Relation.Relation} T_PK 
 	ON 
-		{_joinon}d
+		{_joinon}
 ) K
 WHERE {_where}
 ;
@@ -362,19 +389,116 @@ WHERE {_where}
 				return _Ret;
 			}
 
-
-
-			private static string Make_AttributeList(List<string> Attributes)
+			public static ColumnBasicProperties Get_ColumnBasicProps(string Relation, string Attribute)
 			{
-				string _ret = "";
+				ColumnBasicProperties _Ret = new ColumnBasicProperties();
 
-				foreach (string s in Attributes)
+				string sql_cmd_str = $@"
+SELECT
+	DATA_TYPE,
+	CHARACTER_MAXIMUM_LENGTH,
+	CHARACTER_OCTET_LENGTH,
+	NUMERIC_PRECISION,
+	NUMERIC_PRECISION_RADIX,
+	NUMERIC_SCALE,
+	DATETIME_PRECISION
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE '['+TABLE_SCHEMA+'].['+TABLE_NAME+']' = '{Relation}' AND COLUMN_NAME = '{Attribute}';
+";
+
+				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
+
+				_DR.Read();
+
+				_Ret.Datatype = _DR.IsDBNull(0) ? null : _DR.GetString(0);
+				_Ret.CharMaxLen = _DR.IsDBNull(1) ? (int?)null : _DR.GetInt32(1);
+				_Ret.CharOctLen = _DR.IsDBNull(2) ? (int?)null : _DR.GetInt32(2);
+				_Ret.NumPrecision = _DR.IsDBNull(3) ? (byte?)null : _DR.GetByte(3);
+				_Ret.NumPrecisionRad = _DR.IsDBNull(4) ? (short?)null : _DR.GetInt16(4);
+				_Ret.NumScale = _DR.IsDBNull(5) ? (int?)null : _DR.GetInt32(5);
+				_Ret.DTPrecision = _DR.IsDBNull(6) ? (short?)null : _DR.GetInt16(6);
+
+				_DR.Close();
+
+				if (string.IsNullOrWhiteSpace(_Ret.Datatype))
 				{
-					_ret += $"[{s}]";
-					_ret += s == Attributes.Last() ? "" : ",";
+					throw new ArgumentNullException("SQL Query returned invalid NULL value!");
 				}
 
-				return _ret;
+				return _Ret;
+			}
+
+			public static Dictionary<string,List<string>> Get_SimilarColumns(ColumnBasicProperties _CBP)
+			{
+				Dictionary<string, List<string>> _Ret = new Dictionary<string, List<string>> ();
+
+				string sql_cmd_str = $@"
+SELECT
+	'['+CS.TABLE_SCHEMA+'].['+CS.TABLE_NAME+']',
+	CS.COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS CS
+LEFT JOIN INFORMATION_SCHEMA.TABLES TS
+ON CS.TABLE_SCHEMA=TS.TABLE_SCHEMA AND CS.TABLE_NAME=TS.TABLE_NAME
+WHERE 
+CS.DATA_TYPE = '{_CBP.Datatype}' AND
+CS.CHARACTER_MAXIMUM_LENGTH {(_CBP.CharMaxLen.HasValue ? $"= {_CBP.CharMaxLen.Value}" : $"IS NULL")} AND
+CS.CHARACTER_OCTET_LENGTH {(_CBP.CharOctLen.HasValue ? $"= {_CBP.CharOctLen.Value}" : $"IS NULL")} AND
+CS.NUMERIC_PRECISION {(_CBP.NumPrecision.HasValue ? $"= {_CBP.NumPrecision.Value}" : $"IS NULL")} AND
+CS.NUMERIC_PRECISION_RADIX {(_CBP.NumPrecisionRad.HasValue ? $"= {_CBP.NumPrecisionRad.Value}" : $"IS NULL")} AND
+CS.NUMERIC_SCALE {(_CBP.NumScale.HasValue ? $"= {_CBP.NumScale.Value}" : $"IS NULL")} AND
+CS.DATETIME_PRECISION {(_CBP.DTPrecision.HasValue ? $"= {_CBP.DTPrecision.Value}" : $"IS NULL")} AND
+CS.TABLE_SCHEMA+CS.TABLE_NAME+CS.COLUMN_NAME NOT IN (
+	SELECT CCU.TABLE_SCHEMA+CCU.TABLE_NAME+CCU.COLUMN_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS  TC
+	JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
+	ON TC.CONSTRAINT_SCHEMA+TC.CONSTRAINT_NAME=CCU.CONSTRAINT_SCHEMA+CCU.CONSTRAINT_NAME
+	WHERE TC.CONSTRAINT_TYPE = 'PRIMARY KEY'
+)
+AND TS.TABLE_TYPE = 'BASE TABLE';
+";
+
+				SqlDataReader _DR = DBManager.ExecuteRead(sql_cmd_str);
+
+				while (_DR.Read())
+				{
+					string _rel = _DR.IsDBNull(0) ? null : _DR.GetString(0);
+					string _atr = _DR.IsDBNull(1) ? null : _DR.GetString(1);
+
+					if (string.IsNullOrWhiteSpace(_rel) || string.IsNullOrWhiteSpace(_atr))
+					{
+						throw new ArgumentNullException("SQL Query returned invalid NULL value!");
+					}
+
+					if (_Ret.Keys.Contains(_rel))
+					{
+						_Ret[_rel].Add(_atr);
+					}
+					else
+					{
+						_Ret.Add(_rel, new List<string>(new string[]{ _atr }));
+					}
+				}
+
+				_DR.Close();
+
+
+				return _Ret;
+
+			}
+
+			public static PossibleReference Test_Reference(PossibleKey PK, string R_FK, string C_FK)
+			{
+				PossibleReference _tmp = new PossibleReference()
+				{
+					PK_Relation = PK,
+					FK_Relation = R_FK,
+					FK_Attributes = new List<string>(new string[] { C_FK })
+				};
+
+				_tmp.Childless = Get_PRStat_Childless(_tmp);
+				_tmp.Parents = Get_PRStat_Parents(_tmp);
+				_tmp.Orphans = Get_PRStat_Orphans(_tmp);
+
+				return _tmp;
 			}
 		}
 	}

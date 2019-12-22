@@ -53,6 +53,7 @@
     <Compile Include="DBManager.cs" />
     <Compile Include="DPAnalysis.cs" />
     <Compile Include="HelperObjects\AttributeBaseData.cs" />
+    <Compile Include="HelperObjects\ColumnBasicProperties.cs" />
     <Compile Include="HelperObjects\PossibleDependency.cs" />
     <Compile Include="HelperObjects\PossibleKey.cs" />
     <Compile Include="HelperObjects\PossibleReference.cs" />
