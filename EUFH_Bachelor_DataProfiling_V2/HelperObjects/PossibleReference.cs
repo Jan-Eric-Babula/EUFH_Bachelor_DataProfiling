@@ -38,5 +38,20 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperObjects
 			get;set;
 		} = -1;
 
+        public decimal GetEvaluation()
+        {
+            if(Childless!=-1 && Parents != -1 && Orphans != -1)
+            {
+                double tot = (double)(Childless + Parents + Orphans);
+                decimal a = (decimal)((double)(Childless + Parents) / tot);
+                decimal b = (decimal)((double)(Parents) / tot);
+                return a * b;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
 	}
 }

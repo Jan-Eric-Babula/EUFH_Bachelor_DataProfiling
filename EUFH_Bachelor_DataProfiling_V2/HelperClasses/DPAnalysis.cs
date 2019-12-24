@@ -11,7 +11,7 @@ using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
 using EUFH_Bachelor_DataProfiling_V2.AnalysesClasses;
 using EUFH_Bachelor_DataProfiling_V2.ResultObjects;
 
-namespace EUFH_Bachelor_DataProfiling_V2
+namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 {
 	class DPAnalysis
 	{
@@ -24,7 +24,7 @@ namespace EUFH_Bachelor_DataProfiling_V2
 
 			InitAnalyse();
 
-			//AttributAnalyse();
+			AttributAnalyse();
 
 			TupelAnalyse();
 

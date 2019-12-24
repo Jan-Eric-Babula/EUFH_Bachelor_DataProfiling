@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace EUFH_Bachelor_DataProfiling_V2
+namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 {
 	class LogHelper
 	{

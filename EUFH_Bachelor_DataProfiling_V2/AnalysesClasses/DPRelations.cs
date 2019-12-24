@@ -1,4 +1,5 @@
-﻿using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
+﻿using EUFH_Bachelor_DataProfiling_V2.HelperClasses;
+using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
 using EUFH_Bachelor_DataProfiling_V2.ResultObjects;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,10 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 						Dictionary<string, List<string>> _a_similar = DPRelationen_Helper.Get_SimilarColumns(_a_p);
 						_a_similar.Remove(_r);
 
+                        /*Filter out unfitting*/
+                        //_a_similar = DPRelationen_Helper.Remove_MinMax(_a_similar, DPAnalysis.AttributAnalyse_Results_Sort[_r][_a]);
+                        //Not used because valid Orphans could be included in this
+
 						foreach (string __r in _a_similar.Keys)
 						{
 							_v = 0;
@@ -53,7 +58,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 					}
 					_i++;
 				}
-
+                _Ret.FoundReferences.Sort((a, b) => a.GetEvaluation().CompareTo(b.GetEvaluation()));
 			}
 
 			return _Ret;
@@ -484,8 +489,44 @@ AND TS.TABLE_TYPE = 'BASE TABLE';
 				return _Ret;
 
 			}
+            
+            public static Dictionary<string, List<string>> Remove_MinMax(Dictionary<string, List<string>> pairs, AErgAttribut aErgAttribut) {
+                Dictionary<string, List<string>> _Ret = new Dictionary<string, List<string>>();
+                AErgAttribut _test = null;
+                bool a, b;
 
-			public static PossibleReference Test_Reference(PossibleKey PK, string R_FK, string C_FK)
+                foreach(string _r in pairs.Keys)
+                {
+                    foreach(string _a in pairs[_r])
+                    {
+                        _test = DPAnalysis.AttributAnalyse_Results_Sort[_r][_a];
+                        if (_test.Datatype_Primitive == "NUM")
+                        {
+                            a = double.Parse(aErgAttribut.Statistics_Min) <= double.Parse(_test.Statistics_Min);
+                            b = double.Parse(aErgAttribut.Statistics_Max) >= double.Parse(_test.Statistics_Max);
+                            if(a && b)
+                            {
+                                if (_Ret.Keys.Contains(_r))
+                                {
+                                    _Ret[_r].Add(_a);
+                                }
+                                else
+                                {
+                                    _Ret.Add(_r, new List<string>(new string[] { _a }));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            
+                        }
+                    }
+                }
+
+                return _Ret;
+            }
+
+            public static PossibleReference Test_Reference(PossibleKey PK, string R_FK, string C_FK)
 			{
 				PossibleReference _tmp = new PossibleReference()
 				{
@@ -500,6 +541,7 @@ AND TS.TABLE_TYPE = 'BASE TABLE';
 
 				return _tmp;
 			}
+
 		}
 	}
 }

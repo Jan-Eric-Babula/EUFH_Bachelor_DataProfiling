@@ -9,6 +9,7 @@ using System.Text;
 using Newtonsoft.Json;
 using System.IO;
 using System.Threading.Tasks;
+using EUFH_Bachelor_DataProfiling_V2.HelperClasses;
 
 namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 {
@@ -21,7 +22,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 
 			_Ret.DocumentedKey = DPTupel_Helper.Get_DocumentedKey(Relation);
 
-			_Ret.DocumentedDpenedency = DPTupel_Helper.Get_DocumentedDependencies(Relation);
+			_Ret.DocumentedDpenedencies = DPTupel_Helper.Get_DocumentedDependencies(Relation);
 
 			if (DPAnalysis.AttributAnalyse_Results_Sort[Relation].First().Value.Count_Rows > 0)
 			{

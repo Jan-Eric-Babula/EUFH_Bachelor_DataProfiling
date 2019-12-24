@@ -49,8 +49,9 @@
     <Compile Include="AnalysesClasses\DPAttribute.cs" />
     <Compile Include="AnalysesClasses\DPRelations.cs" />
     <Compile Include="AnalysesClasses\DPTupel.cs" />
-    <Compile Include="DBManager.cs" />
-    <Compile Include="DPAnalysis.cs" />
+    <Compile Include="HelperClasses\DBManager.cs" />
+    <Compile Include="HelperClasses\DPAnalysis.cs" />
+    <Compile Include="HelperClasses\ExportHelper.cs" />
     <Compile Include="HelperObjects\AttributeBaseData.cs" />
     <Compile Include="HelperObjects\ColumnBasicProperties.cs" />
     <Compile Include="HelperObjects\PossibleDependency.cs" />
@@ -60,7 +61,7 @@
     <Compile Include="ResultObjects\AErgRelationen.cs" />
     <Compile Include="ResultObjects\AErgTupel.cs" />
     <Compile Include="ResultObjects\AnalyseErgebnis.cs" />
-    <Compile Include="LogHelper.cs" />
+    <Compile Include="HelperClasses\LogHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

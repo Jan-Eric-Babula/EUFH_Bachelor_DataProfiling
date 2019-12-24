@@ -9,7 +9,7 @@ using System.Data.SqlClient;
 using System.Reflection;
 using System.Data;
 
-namespace EUFH_Bachelor_DataProfiling_V2
+namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 {
 	class DBManager
 	{

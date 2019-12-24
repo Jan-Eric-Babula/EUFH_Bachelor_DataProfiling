@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using EUFH_Bachelor_DataProfiling_V2.HelperClasses;
 
 namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 {
