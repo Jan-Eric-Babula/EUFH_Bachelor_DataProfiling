@@ -34,27 +34,31 @@ namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 					if (RelationsWithKeys[_r].Attributes.Count == 1)
 					{
 						string _a = RelationsWithKeys[_r].Attributes.First();
-						ColumnBasicProperties _a_p = DPRelationen_Helper.Get_ColumnBasicProps(_r, _a);
-						int _j = 0, _v = 0;
-						Dictionary<string, List<string>> _a_similar = DPRelationen_Helper.Get_SimilarColumns(_a_p);
-						_a_similar.Remove(_r);
+                        ColumnBasicProperties _a_p = DPRelationen_Helper.Get_ColumnBasicProps(_r, _a);
+                        int _j = 0, _v = 0;
+                        Dictionary<string, List<string>> _a_similar = DPRelationen_Helper.Get_SimilarColumns(_a_p);
+                        _a_similar.Remove(_r);
 
                         /*Filter out unfitting*/
                         //_a_similar = DPRelationen_Helper.Remove_MinMax(_a_similar, DPAnalysis.AttributAnalyse_Results_Sort[_r][_a]);
                         //Not used because valid Orphans could be included in this
 
-						foreach (string __r in _a_similar.Keys)
-						{
-							_v = 0;
-							foreach (string __a in _a_similar[__r])
-							{
-								LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name} - {_i}/{RelationsWithKeys.Count} - {_r} - Checking {_j} ({__r}) on {_v}({__a})");
-								_Ret.FoundReferences.Add(DPRelationen_Helper.Test_Reference(RelationsWithKeys[_r], __r, __a));
-								_v++;
-								
-							}
-							_j++;
-						}
+                        foreach (string __r in _a_similar.Keys)
+                        {
+                            _v = 0;
+                            foreach (string __a in _a_similar[__r])
+                            {
+                                LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name} - {_i}/{RelationsWithKeys.Count} - {_r} - Checking {_j} ({__r}) on {_v}({__a})");
+
+                                if(DPAnalysis.AttributAnalyse_Results_Sort[__r][__a].Count_Attribute > 0)
+                                {
+                                    _Ret.FoundReferences.Add(DPRelationen_Helper.Test_Reference(RelationsWithKeys[_r], __r, __a));
+                                }
+                                _v++;
+                                
+                            }
+                            _j++;
+                        }   
 					}
 					_i++;
 				}
