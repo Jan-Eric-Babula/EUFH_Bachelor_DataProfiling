@@ -1,15 +1,10 @@
-﻿using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
 
 namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 {
 	class AErgRelationen : AnalyseErgebnis
 	{
-
 		public List<PossibleReference> DocumentedReferences
 		{
 			get; set;
@@ -24,10 +19,6 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 		{
 			FilePath = $@"{_Database}";
 			FileTitel = $"{_Database} References";
-		}
-
-		public AErgRelationen()
-		{
 		}
 	}
 }

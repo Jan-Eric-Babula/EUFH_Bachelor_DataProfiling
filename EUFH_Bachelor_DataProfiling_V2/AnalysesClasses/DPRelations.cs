@@ -1,13 +1,11 @@
-﻿using EUFH_Bachelor_DataProfiling_V2.HelperClasses;
-using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
-using EUFH_Bachelor_DataProfiling_V2.ResultObjects;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using EUFH_Bachelor_DataProfiling_V2.HelperClasses;
+using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
+using EUFH_Bachelor_DataProfiling_V2.ResultObjects;
 
 namespace EUFH_Bachelor_DataProfiling_V2.AnalysesClasses
 {

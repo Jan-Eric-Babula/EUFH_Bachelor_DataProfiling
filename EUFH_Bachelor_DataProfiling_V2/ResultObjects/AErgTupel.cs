@@ -1,9 +1,5 @@
-﻿using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
 
 namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 {
@@ -53,7 +49,5 @@ namespace EUFH_Bachelor_DataProfiling_V2.ResultObjects
 			Relation = _Relation;
 			Size = size;
 		}
-
-		public AErgTupel() { }
 	}
 }

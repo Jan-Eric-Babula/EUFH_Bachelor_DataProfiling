@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using System.Data.SqlClient;
 using System.Reflection;
-using Newtonsoft.Json;
 using EUFH_Bachelor_DataProfiling_V2.HelperObjects;
 using EUFH_Bachelor_DataProfiling_V2.AnalysesClasses;
 using EUFH_Bachelor_DataProfiling_V2.ResultObjects;
@@ -51,81 +48,43 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 
 		private static void AttributAnalyse()
 		{
-			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
-#if DEBUG
-			/*Import dump instead of running AttributAnalyse()*/
-			string import_json = File.ReadAllText("dump_complete_20191220.json");
-			AttributAnalyse_Results = JsonConvert.DeserializeObject<Dictionary<string, List<AErgAttribut>>>(import_json);
-#else
-			int i = 0, offset = 0, limit = 100, j = 0;
-
+			int i = 0, j = 0;
 			
-
 			foreach (string Relation in Relations)
 			{
 				LogHelper.LogApp($"{i+1}) {Relation}");
-				if (i + 1 >= offset)
+
+				long RowCount = DPAnalysis_Helper.GetRelationRowCount(Relation);
+
+				List<AttributeBaseData> L_ABD = DPAnalysis_Helper.GetAttributesBaseData(Relation, RowCount);
+
+				List<AErgAttribut> _tmp = new List<AErgAttribut>();
+
+				j = 0;
+
+				foreach (AttributeBaseData ABD in L_ABD)
 				{
 
-					long RowCount = DPAnalysis_Helper.GetRelationRowCount(Relation);
 
-					List<AttributeBaseData> L_ABD = DPAnalysis_Helper.GetAttributesBaseData(Relation, RowCount);
+					LogHelper.LogApp($"{i + 1}.{j + 1}) {Relation}.[{ABD.AttributeName}]");
 
-					List<AErgAttribut> _tmp = new List<AErgAttribut>();
-
-					j = 0;
-
-					foreach (AttributeBaseData ABD in L_ABD)
+					try
 					{
+						AErgAttribut _loc = DPAttribut.Analysis(Database, Relation, ABD.AttributeName, ABD);
 
-
-						LogHelper.LogApp($"{i + 1}.{j + 1}) {Relation}.[{ABD.AttributeName}]");
-
-						try
-						{
-							AErgAttribut _loc = DPAttribut.Analysis(Database, Relation, ABD.AttributeName, ABD);
-
-							_tmp.Add(_loc);
-
-							//DUMP LOCAL RESULTS
-							string json_l = JsonConvert.SerializeObject(_loc, Formatting.Indented);
-							if (File.Exists("dump_attribut_last.json"))
-							{
-								File.Delete("dump_attribut_last.json");
-							}
-							File.WriteAllText("dump_attribut_last.json", json_l);
-						}
-						catch (Exception e)
-						{
-							LogHelper.LogAppError(e);
-						}
-
-						j++;
+						_tmp.Add(_loc);
+					}
+					catch (Exception e)
+					{
+						LogHelper.LogAppError(e);
 					}
 
-					AttributAnalyse_Results.Add(Relation, _tmp);
-
-					//DUMP FULL RESULTS
-					string json = JsonConvert.SerializeObject(AttributAnalyse_Results, Formatting.Indented);
-					if (File.Exists("dump_attribut_complete.json"))
-					{
-						File.Delete("dump_attribut_complete.json");
-					}
-					File.WriteAllText("dump_attribut_complete.json", json);
-				}
-				else
-				{
-					AttributAnalyse_Results.Add(Relation, null);
+					j++;
 				}
 
-				if (i+1 == limit)
-				{
-					break;
-				}
-
+				AttributAnalyse_Results.Add(Relation, _tmp);
 				i++;
 			}
-#endif
 		}
 
 		public static List<AErgTupel> TupelAnalyse_Results = new List<AErgTupel>();
@@ -133,12 +92,6 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 
 		private static void TupelAnalyse()
 		{
-			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
-#if DEBUG
-			/*Import dump instead of running TupelAnalyse()*/
-			string import_json = File.ReadAllText("dump_tupel_withoutDependency_20191221.json");
-			TupelAnalyse_Results = JsonConvert.DeserializeObject<List<AErgTupel>>(import_json);
-#else
 			//Reformat
 			foreach (var _a in AttributAnalyse_Results.Keys)
 			{
@@ -152,26 +105,15 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 				AttributAnalyse_Results_Sort.Add(_a, _tmp);
 			}
 			//\\
-			int limit = 30;
+
 			int i = 0;
 			foreach (string rel in Relations)
 			{
 				LogHelper.LogApp($"{i}) {rel}");
 				TupelAnalyse_Results.Add(DPTupel.Analysis(Database, rel));
-				string json = JsonConvert.SerializeObject(TupelAnalyse_Results, Formatting.Indented);
-				if (File.Exists("dump_tupel.json"))
-				{
-					File.Delete("dump_tupel.json");
-				}
-				File.WriteAllText("dump_tupel.json", json);
 
 				i++;
-				if (i >= limit)
-				{
-					break;
-				}
 			}
-#endif
 		}
 
 		public static AErgRelationen RelationenAnalysis_Result = null;
@@ -189,13 +131,6 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 
 			RelationenAnalysis_Result = DPRelationen.Analysis(Database);
 
-			string json = JsonConvert.SerializeObject(RelationenAnalysis_Result, Formatting.Indented);
-			if (File.Exists("dump_relation.json"))
-			{
-				File.Delete("dump_relation.json");
-			}
-			File.WriteAllText("dump_relation.json", json);
-
 		}
 
 		private static void Export()
@@ -203,7 +138,14 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 
 			LogHelper.LogApp($"{MethodBase.GetCurrentMethod().Name}");
 
-			//
+			foreach (List<AErgAttribut> resultList in AttributAnalyse_Results.Values)
+			{
+				ExportHelper.Export_AttributeAnalyis(resultList);
+			}
+
+			ExportHelper.Export_TupelAnalysis(TupelAnalyse_Results);
+
+			ExportHelper.Export_RelationAnalysis(RelationenAnalysis_Result);
 
 		}
 

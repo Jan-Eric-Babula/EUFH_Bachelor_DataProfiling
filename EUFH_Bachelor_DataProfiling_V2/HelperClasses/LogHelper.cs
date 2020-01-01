@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
@@ -11,6 +8,7 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 	{
 
 		private static readonly string _LogGeneral = $@"app.log";
+		private static readonly string _LogSQL = $@"sql.log";
 
 		public static void LogApp(string log)
 		{
@@ -37,8 +35,6 @@ namespace EUFH_Bachelor_DataProfiling_V2.HelperClasses
 
 			Program.ExitWithError();
 		}
-
-		private static readonly string _LogSQL = $@"sql.log";
 
 		public static void LogSQL(string sql)
 		{
